@@ -1,18 +1,13 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-
 import 'package:qr_reader/providers/db_provider.dart';
 
 class MapaPage extends StatefulWidget {
-  final LatLng? destinationPoint; // opcional: segundo punto para ruta
-
-  const MapaPage({super.key, this.destinationPoint});
+  const MapaPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _MapaPageState createState() => _MapaPageState();
 }
 
@@ -20,38 +15,40 @@ class _MapaPageState extends State<MapaPage> {
   final Completer<GoogleMapController> _controller = Completer();
   MapType mapType = MapType.normal;
 
-  // Polyline / API
-  static const String _googleApiKey = 'AIzaSyDQZ6vfLniJwM7ZoYOB5mHwldcCTvFrtEM'; // reemplaza
+  // Toca cambiar esta por la propia API Key de Google Maps para configurarla
+  static const String _googleApiKey = 'AIzaSyDQZ6vfLniJwM7ZoYOB5mHwldcCTvFrtEM';
+
   late final PolylinePoints _polylinePoints;
   Set<Polyline> _polylines = {};
-  bool _routeRequested = false; // para evitar llamadas repetidas
+  bool _routeRequested = false;
 
   @override
   void initState() {
     super.initState();
-    // Usar la fábrica "enhanced" con la apiKey (Routes API)
-    _polylinePoints = PolylinePoints.enhanced(_googleApiKey);
+    // Inicializamos PolylinePoints con la API Key
+    _polylinePoints = PolylinePoints(apiKey: _googleApiKey);
   }
 
-  Future<void> _drawPolyline(LatLng origin, LatLng destination) async {
-    // limpia polylines previas
-    setState(() {
-      _polylines.clear();
-    });
+  // 🔷 Método para dibujar la ruta entre dos puntos
+  Future<void> _drawRoute(LatLng origin, LatLng destination) async {
+    setState(() => _polylines.clear());
 
     try {
-      final response = await _polylinePoints.getRouteBetweenCoordinatesV2(
-        request: RequestConverter.createEnhancedRequest(
-          origin: PointLatLng(origin.latitude, origin.longitude),
-          destination: PointLatLng(destination.latitude, destination.longitude),
-          travelMode: TravelMode.driving,
-        ),
+      // Aqui se deberia Usar la API de Rutas
+      final RoutesApiRequest request = RoutesApiRequest(
+        origin: PointLatLng(origin.latitude, origin.longitude),
+        destination: PointLatLng(destination.latitude, destination.longitude),
+        travelMode: TravelMode.driving,
+        routingPreference: RoutingPreference.trafficAware,
       );
 
+      final RoutesApiResponse response =
+          await _polylinePoints.getRouteBetweenCoordinatesV2(request: request);
+
       if (response.routes.isNotEmpty) {
-        // Convertir a formato legacy para obtener lista de PointLatLng
-        final legacy = _polylinePoints.convertToLegacyResult(response);
-        final points = legacy.points;
+        final route = response.routes.first;
+        final points = route.polylinePoints ?? [];
+
         if (points.isNotEmpty) {
           final coords = points
               .map((p) => LatLng(p.latitude, p.longitude))
@@ -62,56 +59,60 @@ class _MapaPageState extends State<MapaPage> {
               Polyline(
                 polylineId: const PolylineId('route'),
                 color: Colors.blue,
+                width: 5,
                 points: coords,
-                width: 4,
               ),
             );
           });
+
+          debugPrint(
+              'Ruta cargada: ${route.distanceKm} km (${route.durationMinutes} min)');
         }
       } else {
-        // No route found -> no hace nada o podrías mostrar un error
+        debugPrint('No se encontró ninguna ruta disponible');
       }
     } catch (e) {
-      // Manejo simple de errores (puedes mejorar logging/ UI)
-      debugPrint('Error al obtener ruta: $e');
+      debugPrint('Error al obtener la ruta: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final scan = ModalRoute.of(context)!.settings.arguments as ScanModel;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final scan = args['scan'] as ScanModel;
+    final userLocation = args['userLocation'] as LatLng?;
 
     final CameraPosition puntoInicial = CameraPosition(
       target: scan.getLatLng(),
-      zoom: 17.5,
-      tilt: 50,
+      zoom: 14.5,
+      tilt: 45,
     );
 
-    // Marcadores
-    Set<Marker> markers = <Marker>{};
-
-    markers.add(
+    // Marcadores en el mapa
+    Set<Marker> markers = {
       Marker(
-        markerId: const MarkerId('geo-location'),
+        markerId: const MarkerId('destino'),
         position: scan.getLatLng(),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       ),
-    );
+    };
 
-    if (widget.destinationPoint != null) {
+    if (userLocation != null) {
       markers.add(
         Marker(
-          markerId: const MarkerId('destination'),
-          position: widget.destinationPoint!,
+          markerId: const MarkerId('origen'),
+          position: userLocation,
           icon:
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         ),
       );
 
-      // Pedir ruta una sola vez después del primer build cuando haya destination
+      // Dibujar la ruta una vez
       if (!_routeRequested) {
         _routeRequested = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _drawPolyline(scan.getLatLng(), widget.destinationPoint!);
+          _drawRoute(userLocation, scan.getLatLng());
         });
       }
     }
@@ -121,15 +122,15 @@ class _MapaPageState extends State<MapaPage> {
         title: const Text('Mapa'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.location_disabled),
+            icon: const Icon(Icons.my_location),
             onPressed: () async {
-              final GoogleMapController controller = await _controller.future;
+              final controller = await _controller.future;
               controller.animateCamera(
                 CameraUpdate.newCameraPosition(
                   CameraPosition(
                     target: scan.getLatLng(),
-                    zoom: 17.5,
-                    tilt: 50,
+                    zoom: 15,
+                    tilt: 45,
                   ),
                 ),
               );
@@ -143,9 +144,7 @@ class _MapaPageState extends State<MapaPage> {
         markers: markers,
         polylines: _polylines,
         initialCameraPosition: puntoInicial,
-        onMapCreated: (GoogleMapController controller) {
-          _controller.complete(controller);
-        },
+        onMapCreated: (controller) => _controller.complete(controller),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.layers),

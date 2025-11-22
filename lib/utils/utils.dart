@@ -17,17 +17,25 @@ Future<void> launchURL(BuildContext context, ScanModel scan) async {
       throw Exception('Could not launch $uriUrl');
     }
   } else {
-    //Crear Ruta
-    final pos = await LocationHelper.getCurrentPosition();
-    if (pos != null) {
-      final lat = pos.latitude;
-      final lng = pos.longitude;
-      final devicePos = LatLng(lat, lng);
-    }
-    
-    if (!context.mounted) return;
-    //Abrir mapa
-    Navigator.pushNamed(context, 'mapa', arguments: scan);
+  // Crear Ruta
+  final pos = await LocationHelper.getCurrentPosition();
+  LatLng? devicePos;
+
+  if (pos != null) {
+    devicePos = LatLng(pos.latitude, pos.longitude);
   }
+
+  if (!context.mounted) return;
+
+  // Abrir mapa enviando ambos puntos
+  Navigator.pushNamed(
+    context,
+    'mapa',
+    arguments: {
+      'scan': scan,
+      'userLocation': devicePos, // ✅ enviamos la ubicación actual
+    },
+  );
+}
 }
 

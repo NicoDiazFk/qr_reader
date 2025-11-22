@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_reader/providers/db_provider1.dart';
 import 'package:qr_reader/utils/location_helper.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 
 class ScanListProvider extends ChangeNotifier {
@@ -27,6 +28,14 @@ class ScanListProvider extends ChangeNotifier {
         valor = 'loc:${pos.latitude},${pos.longitude}; value:$valor';
       }
     }
+     // Si es "geo", también obtenemos la ubicación actual
+    LatLng? currentLocation;
+    if (tipo == 'geo') {
+      final pos = await LocationHelper.getCurrentPosition();
+      if (pos != null) {
+      currentLocation = LatLng(pos.latitude, pos.longitude);
+      }
+    }
 
     // Crear modelo
     final nuevoScan = ScanModel(tipo: tipo, valor: valor);
@@ -39,6 +48,7 @@ class ScanListProvider extends ChangeNotifier {
       scans.add(nuevoScan);
       notifyListeners();
     }
+
 
     return nuevoScan;
   }
