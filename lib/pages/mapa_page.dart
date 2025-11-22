@@ -16,7 +16,7 @@ class _MapaPageState extends State<MapaPage> {
   MapType mapType = MapType.normal;
 
   // Toca cambiar esta por la propia API Key de Google Maps para configurarla
-  static const String _googleApiKey = 'AIzaSyDQZ6vfLniJwM7ZoYOB5mHwldcCTvFrtEM';
+  static const String _googleApiKey = 'AIzaSyD1pPA7tmp6QP8KwN9uf5Oa2U3ig5GqgrE';
 
   late final PolylinePoints _polylinePoints;
   Set<Polyline> _polylines = {};

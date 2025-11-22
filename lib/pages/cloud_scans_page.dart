@@ -39,7 +39,19 @@ class _CloudScansPageState extends State<CloudScansPage> {
     }
 
     if (cloudScans.isEmpty) {
-      return const Center(child: Text('No hay elementos para mostrar'));
+      return Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          title: Text(
+            'Scans en la nube',
+            style: TextStyle(color: Colors.white),
+          ),
+          centerTitle: true,
+
+          backgroundColor: Colors.deepPurple,
+        ),
+        body: Center(child: Text('No hay elementos para mostrar')),
+      );
     }
 
     return Scaffold(

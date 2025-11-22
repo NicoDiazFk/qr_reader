@@ -1,49 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_reader/pages/home_page.dart';
-import 'package:qr_reader/pages/register_page.dart';
+import 'package:qr_reader/pages/login_page.dart';
 import 'package:qr_reader/providers/user_provider.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+
   final formKey = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
+  bool _obscurePasswordConfirm = true;
 
-  void loginFunction(String email, String password) async {
+  void registerFunction(String email, String password) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    // Intentar login
-    bool ok = await userProvider.login(email, password);
 
-    // Evitar problemas de contexto entre espacios asíncronos
+    // Llamar al provider
+    bool ok = await userProvider.register(email, password);
+
     if (!mounted) return;
 
-    // Si los datos están correctos
     if (ok == true) {
-      // Mensaje saliente
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Sesión iniciada correctamente')));
-      // Cambiar de página
+      ).showSnackBar(SnackBar(content: Text('Usuario registrado con éxito')));
+
+      // Redirigir al Home
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(builder: (context) => LoginPage()),
       );
-    }
-    // Si los datos no están correctos
-    else {
-      // Mensaje saliente
+    } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Datos incorrectos')));
+      ).showSnackBar(SnackBar(content: Text('Error al registrar el usuario')));
     }
   }
 
@@ -58,7 +56,11 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.person, size: 80, color: Colors.deepPurple),
+                const Icon(
+                  Icons.person_add,
+                  size: 80,
+                  color: Colors.deepPurple,
+                ),
                 const SizedBox(height: 32),
 
                 // CAMPO EMAIL
@@ -71,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Ingresa un correo';
+                      return 'Ingresa tu correo';
                     }
                     if (!value.contains('@')) {
                       return 'Correo inválido';
@@ -82,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 16),
 
-                // CAMPO PASSWORD
+                // CAMPO CONTRASEÑA
                 TextFormField(
                   controller: passwordController,
                   decoration: InputDecoration(
@@ -104,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Ingresa la contraseña';
+                      return 'Ingresa una contraseña';
                     }
                     if (value.length < 6) {
                       return 'Debe tener mínimo 6 caracteres';
@@ -113,9 +115,42 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
 
+                const SizedBox(height: 16),
+
+                // CAMPO CONFIRMAR CONTRASEÑA
+                TextFormField(
+                  controller: confirmPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Confirmar contraseña',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePasswordConfirm
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePasswordConfirm = !_obscurePasswordConfirm;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: _obscurePasswordConfirm,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Repite la contraseña';
+                    }
+                    if (value != passwordController.text) {
+                      return 'Las contraseñas no coinciden';
+                    }
+                    return null;
+                  },
+                ),
+
                 const SizedBox(height: 24),
 
-                // BOTÓN LOGIN
+                // BOTÓN REGISTRO
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -124,37 +159,21 @@ class _LoginPageState extends State<LoginPage> {
                         final email = emailController.text.trim();
                         final password = passwordController.text.trim();
 
-                        // Función con lógica de login
-                        loginFunction(email, password);
+                        registerFunction(email, password);
                       }
                     },
-                    child: const Text('Ingresar'),
+                    child: const Text('Registrarse'),
                   ),
                 ),
 
-                // Separador
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '¿No está registrado?',
-                      style: TextStyle(fontSize: 16),
-                    ),
+                const SizedBox(height: 16),
 
-                    // BOTÓN REGISTRAR
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RegisterPage(),
-                          ),
-                        );
-                      },
-                      child: const Text('Registrarse'),
-                    ),
-                  ],
+                // IR A LOGIN
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Ya tengo una cuenta'),
                 ),
               ],
             ),

@@ -8,8 +8,17 @@ class SupabaseService {
   // USUARIOS
   // ---------------------------
 
-  Future<void> insertUser(String email, String password) async {
-    await _client.from('users').insert({'email': email, 'password': password});
+  Future<bool> insertUser(String email, String password) async {
+    try {
+      await _client.from('users').insert({
+        'email': email,
+        'password': password,
+      });
+
+      return true; // Se insertó sin error
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<Map<String, dynamic>?> getUserByEmail(String email) async {

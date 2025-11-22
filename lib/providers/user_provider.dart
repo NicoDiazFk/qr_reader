@@ -28,6 +28,15 @@ class UserProvider extends ChangeNotifier {
     return true;
   }
 
+  Future<bool> register(String email, String password) async {
+    // Revisar si el usuario existe
+    final user = await _supabaseService.getUserByEmail(email);
+    // Si el usuario existe
+    if (user != null) return false;
+    // Si no existe, registrar
+    return await _supabaseService.insertUser(email, password);
+  }
+
   void logout() {
     _userId = '';
     _isLoggedIn = false;

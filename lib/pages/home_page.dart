@@ -2,9 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_reader/pages/cloud_scans_page.dart';
+import 'package:qr_reader/pages/login_page.dart';
 import 'package:qr_reader/pages/pages_barrel.dart';
 import 'package:qr_reader/providers/scan_list_provider.dart';
 import 'package:qr_reader/providers/ui_provider.dart';
+import 'package:qr_reader/providers/user_provider.dart';
 import 'package:qr_reader/widgets/custom_navigatorbar.dart';
 import 'package:qr_reader/widgets/scan_button.dart';
 
@@ -25,6 +27,13 @@ class HomePage extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.delete_forever, color: Colors.red),
             onPressed: () async {
+              if (Provider.of<ScanListProvider>(
+                context,
+                listen: false,
+              ).scans.isEmpty) {
+                return;
+              }
+
               bool confirmation = await showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -54,10 +63,21 @@ class HomePage extends StatelessWidget {
                   listen: false,
                 ).borrarTodos();
 
+                if (!context.mounted) return;
                 if (ok) {
-                  return;
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Datos guardados'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Aceptar'),
+                        ),
+                      ],
+                    ),
+                  );
                 } else {
-                  if (!context.mounted) return;
                   showDialog(
                     context: context,
                     builder: (ctx) => AlertDialog(
@@ -85,6 +105,16 @@ class HomePage extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (context) => CloudScansPage()),
               );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: () async {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPage()),
+              );
+              Provider.of<UserProvider>(context, listen: false).logout();
             },
           ),
         ],
