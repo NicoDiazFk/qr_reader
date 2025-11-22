@@ -5,6 +5,7 @@ import 'package:qr_reader/pages/login_page.dart';
 import 'package:qr_reader/pages/mapa_page.dart';
 import 'package:qr_reader/providers/scan_list_provider.dart';
 import 'package:qr_reader/providers/ui_provider.dart';
+import 'package:qr_reader/providers/user_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -12,8 +13,7 @@ void main() async {
 
   await Supabase.initialize(
     url: 'https://rqapmdhpavutdcthewdg.supabase.co',
-    anonKey:
-        'sb_publishable_ei5mFE6UV2vUUPgs64B8Ig_d05yAKcE',
+    anonKey: 'sb_publishable_ei5mFE6UV2vUUPgs64B8Ig_d05yAKcE',
   );
   runApp(const MyApp());
 }
@@ -26,20 +26,12 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UiProvider()),
-        ChangeNotifierProvider(
-          create: (_) {
-            final provider = ScanListProvider();
-            final initScanValues = [
-              'https://www.youtube.com',
-              'geo:3.367516356008678, -76.52717816760348',
-              'Otro Valor',
-              'unito más',
-              'https://www.google.com',
-            ];
-            for (var scanValue in initScanValues) {
-              provider.nuevoScan(scanValue);
-            }
-            return provider;
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProxyProvider<UserProvider, ScanListProvider>(
+          create: (_) =>
+              ScanListProvider(UserProvider()), // valor inicial temporal
+          update: (_, userProvider, previous) {
+            return ScanListProvider(userProvider);
           },
         ),
       ],

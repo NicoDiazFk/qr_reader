@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_reader/pages/home_page.dart';
-import 'package:qr_reader/utils/supabase_service.dart';
+import 'package:qr_reader/providers/user_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,17 +14,19 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
-  final supabaseService = SupabaseService();
+  
   bool _obscurePassword = true;
 
   void loginFunction(String email, String password) async {
-    final isDataOk = await supabaseService.userLogin(email, password);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    // Intentar login
+    bool ok = await userProvider.login(email, password);
 
     // Evitar problemas de contexto entre espacios asíncronos
     if (!mounted) return;
 
     // Si los datos están correctos
-    if (isDataOk == true) {
+    if (ok == true) {
       // Mensaje saliente
       ScaffoldMessenger.of(
         context,

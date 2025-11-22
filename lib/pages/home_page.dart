@@ -13,7 +13,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -32,6 +31,10 @@ class HomePage extends StatelessWidget {
                   title: const Text(
                     '¿Seguro que quieres borrar todos los elementos de la lista?',
                   ),
+                  content: const Text(
+                    'Serán guardados en la nube.',
+                    style: TextStyle(fontSize: 14),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(ctx).pop(false),
@@ -46,10 +49,32 @@ class HomePage extends StatelessWidget {
               );
               if (confirmation) {
                 if (!context.mounted) return;
-                Provider.of<ScanListProvider>(
+                bool ok = await Provider.of<ScanListProvider>(
                   context,
                   listen: false,
                 ).borrarTodos();
+
+                if (ok) {
+                  return;
+                } else {
+                  if (!context.mounted) return;
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Error al guardar'),
+                      content: const Text(
+                        'No se han podido guardar los datos en la nube.\nNo serán borrados.',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Aceptar'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
               }
             },
           ),
@@ -58,7 +83,7 @@ class HomePage extends StatelessWidget {
             onPressed: () async {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => CloudscansPage()),
+                MaterialPageRoute(builder: (context) => CloudScansPage()),
               );
             },
           ),

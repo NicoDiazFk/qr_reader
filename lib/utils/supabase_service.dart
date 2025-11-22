@@ -1,3 +1,4 @@
+import 'package:qr_reader/models/scan_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService {
@@ -8,10 +9,7 @@ class SupabaseService {
   // ---------------------------
 
   Future<void> insertUser(String email, String password) async {
-    await _client.from('users').insert({
-      'email': email,
-      'password': password,
-    });
+    await _client.from('users').insert({'email': email, 'password': password});
   }
 
   Future<Map<String, dynamic>?> getUserByEmail(String email) async {
@@ -24,34 +22,55 @@ class SupabaseService {
     return data; // null si no existe
   }
 
-  Future<bool> userLogin(String email, String password) async {
-    // Buscar usuario por email
-    final user = await getUserByEmail(email);
-
-    // Si no existe el usuario → false
-    if (user == null) return false;
-
-    // Comparar contraseñas (texto plano)
-    final storedPassword = user['password'];
-
-    return storedPassword == password;
-  }
-
   // ---------------------------
   // SCANS
   // ---------------------------
 
-  Future<void> insertScan(String tipo, String valor) async {
-    await _client.from('scans').insert({'type': tipo, 'value': valor});
+  Future<void> insertScan(String userId, String tipo, String valor) async {
+    await _client.from('scans').insert({
+      'user_id': userId,
+      'tipo': tipo,
+      'valor': valor,
+    });
   }
 
   Future<List<Map<String, dynamic>>> getScansByType(String tipo) async {
-    final data = await _client.from('scans').select().eq('type', tipo);
+    final data = await _client.from('scans').select().eq('tipo', tipo);
 
     return List<Map<String, dynamic>>.from(data);
   }
 
-  Future<void> deleteScan(String id) async {
-    await _client.from('scans').delete().eq('id', id);
+  Future<List<ScanModel>> getScansByUser(String userId) async {
+    final response = await _client
+        .from('scans')
+        .select()
+        .eq('user_id', userId)
+        .order('id', ascending: true);
+
+    // response es List<dynamic> con jsons
+    final scans = response.map<ScanModel>((item) {
+      return ScanModel.fromJson(item);
+    }).toList();
+
+    return scans;
+  }
+
+  Future<bool> deleteScan(String userId, int scanId) async {
+    try {
+      final response = await _client
+          .from('scans')
+          .delete()
+          .eq('id', scanId)
+          .eq('user_id', userId);
+
+      // Si no borra nada, significa que no coincidió userId o id
+      if (response == null) {
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

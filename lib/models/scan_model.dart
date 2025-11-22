@@ -10,12 +10,7 @@ class ScanModel {
   String valor;
 
   // Constructor base
-  ScanModel({
-    this.id,
-    required this.tipo,
-    required this.valor,
-  });
-
+  ScanModel({this.id, required this.tipo, required this.valor});
 
   LatLng getLatLng() {
     // Limpia el prefijo "geo:" o "loc:" y posibles textos adicionales.
@@ -38,16 +33,9 @@ class ScanModel {
   }
 
   /// Crea un objeto desde JSON
-  factory ScanModel.fromJson(Map<String, dynamic> json) => ScanModel(
-        id: json["id"],
-        tipo: json["tipo"],
-        valor: json["valor"],
-      );
+  factory ScanModel.fromJson(Map<String, dynamic> json) =>
+      ScanModel(id: json["id"], tipo: json["tipo"], valor: json["valor"]);
 
   /// Convierte el objeto a JSON
-  Map<String, dynamic> toJson() => {
-        "id": id,
-        "tipo": tipo,
-        "valor": valor,
-      };
+  Map<String, dynamic> toJson() => {"id": id, "tipo": tipo, "valor": valor};
 }

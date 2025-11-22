@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:qr_reader/providers/db_provider1.dart';
+import 'package:qr_reader/providers/user_provider.dart';
 import 'package:qr_reader/utils/location_helper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
+import 'package:qr_reader/utils/supabase_service.dart';
 
 class ScanListProvider extends ChangeNotifier {
   List<ScanModel> scans = [];
+  List<ScanModel> cloudScans = [];
   String tipoSeleccionado = '';
+  final UserProvider userProvider;
+
+  ScanListProvider(this.userProvider);
 
   Future<ScanModel> nuevoScan(String valor) async {
     // Determinar tipo
@@ -19,7 +24,6 @@ class ScanListProvider extends ChangeNotifier {
       tipo = 'otro';
     }
 
-
     // Si es "otro", capturamos ubicación actual
     if (tipo == 'otro') {
       final pos = await LocationHelper.getCurrentPosition();
@@ -28,12 +32,12 @@ class ScanListProvider extends ChangeNotifier {
         valor = 'loc:${pos.latitude},${pos.longitude}; value:$valor';
       }
     }
-     // Si es "geo", también obtenemos la ubicación actual
+    // Si es "geo", también obtenemos la ubicación actual
     LatLng? currentLocation;
     if (tipo == 'geo') {
       final pos = await LocationHelper.getCurrentPosition();
       if (pos != null) {
-      currentLocation = LatLng(pos.latitude, pos.longitude);
+        currentLocation = LatLng(pos.latitude, pos.longitude);
       }
     }
 
@@ -49,7 +53,6 @@ class ScanListProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-
     return nuevoScan;
   }
 
@@ -59,14 +62,52 @@ class ScanListProvider extends ChangeNotifier {
     tipoSeleccionado = tipo;
     notifyListeners();
   }
-Future<void> borrarTodos() async {
-  await DBProvider1.db.deleteScansByType(tipoSeleccionado);
-  scans = [];
-  notifyListeners();
-}
+
+  Future<bool> borrarTodos() async {
+    // Primero guardar en la nube
+    try {
+      for (var scan in scans) {
+        await SupabaseService().insertScan(
+          userProvider.userId,
+          scan.tipo,
+          scan.valor,
+        );
+      }
+    } catch (e) {
+      return false;
+    }
+
+    // Luego borrar del local
+    await DBProvider1.db.deleteScansByType(tipoSeleccionado);
+    scans = [];
+    notifyListeners();
+    return true;
+  }
+
   Future<void> borrarScanPorId(int id) async {
     await DBProvider1.db.deleteScan(id);
   }
-}
 
-  
+  Future<void> loadScansFromCloud() async {
+    final userId = userProvider.userId;
+    if (userId == '') return;
+
+    cloudScans = await SupabaseService().getScansByUser(userId);
+    notifyListeners();
+  }
+
+  Future<void> borrarScanEnNube(int scanId) async {
+    final userId = userProvider.userId;
+
+    if (userId == '') {
+      return;
+    }
+
+    final ok = await SupabaseService().deleteScan(userId, scanId);
+
+    if (ok) {
+      cloudScans.removeWhere((scan) => scan.id == scanId);
+      notifyListeners();
+    }
+  }
+}
