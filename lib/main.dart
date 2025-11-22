@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_reader/pages/home_page.dart';
+import 'package:qr_reader/pages/login_page.dart';
 import 'package:qr_reader/pages/mapa_page.dart';
 import 'package:qr_reader/providers/scan_list_provider.dart';
 import 'package:qr_reader/providers/ui_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() => runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://rqapmdhpavutdcthewdg.supabase.co',
+    anonKey:
+        'sb_publishable_ei5mFE6UV2vUUPgs64B8Ig_d05yAKcE',
+  );
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -37,9 +48,13 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'QR Reader',
 
-        initialRoute: 'home',
+        initialRoute: 'login',
 
-        routes: {'home': (_) => HomePage(), 'mapa': (_) => MapaPage()},
+        routes: {
+          'login': (_) => LoginPage(),
+          'home': (_) => HomePage(),
+          'mapa': (_) => MapaPage(),
+        },
         theme: ThemeData(
           primaryColor: Colors.deepPurple,
           floatingActionButtonTheme: FloatingActionButtonThemeData(

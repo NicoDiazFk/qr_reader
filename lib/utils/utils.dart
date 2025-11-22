@@ -24,6 +24,8 @@ Future<void> launchURL(BuildContext context, ScanModel scan) async {
       final lng = pos.longitude;
       final devicePos = LatLng(lat, lng);
     }
+    
+    if (!context.mounted) return;
     //Abrir mapa
     Navigator.pushNamed(context, 'mapa', arguments: scan);
   }

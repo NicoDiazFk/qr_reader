@@ -1,6 +1,7 @@
 //fls
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_reader/pages/cloud_scans_page.dart';
 import 'package:qr_reader/pages/pages_barrel.dart';
 import 'package:qr_reader/providers/scan_list_provider.dart';
 import 'package:qr_reader/providers/ui_provider.dart';
@@ -12,6 +13,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -49,6 +51,15 @@ class HomePage extends StatelessWidget {
                   listen: false,
                 ).borrarTodos();
               }
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.cloud, color: Colors.white),
+            onPressed: () async {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CloudscansPage()),
+              );
             },
           ),
         ],
